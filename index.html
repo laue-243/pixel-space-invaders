@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pixel Space Invaders</title>
+<style>
+body { background: #000; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; image-rendering: pixelated; }
+canvas { border: 4px solid #333; image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<canvas id="game" width="600" height="400"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+let playerX = 280;
+const playerY = 360;
+let bullets = [];
+let aliens = [];
+let alienDir = 1;
+let score = 0;
+let gameOver = false;
+
+for (let r = 0; r < 4; r++) {
+  for (let c = 0; c < 8; c++) {
+    aliens.push({x: c*60 + 50, y: r*40 + 40, alive: true});
+  }
+}
+
+function loop() {
+  if (gameOver) return;
+  // Move aliens
+  let edge = false;
+  aliens.forEach(a => {
+    if (a.alive) {
+      a.x += alienDir * 1;
+      if (a.x < 0 || a.x > 560) edge = true;
+      if (a.y > 340) gameOver = true;
+    }
+  });
+  if (edge) {
+    alienDir *= -1;
+    aliens.forEach(a => a.y += 20);
+  }
+
+  bullets.forEach((b, i) => {
+    b.y -= 5;
+    aliens.forEach(a => {
+      if (a.alive && b.x > a.x && b.x < a.x + 30 && b.y > a.y && b.y < a.y + 20) {
+        a.alive = false;
+        bullets.splice(i, 1);
+        score += 10;
+      }
+    });
+    if (b.y < 0) bullets.splice(i, 1);
+  });
+
+  if (aliens.every(a => !a.alive)) {
+    alert('You Win! Score: ' + score);
+    location.reload();
+  }
+  if (gameOver) {
+    alert('Game Over! Score: ' + score);
+    location.reload();
+  }
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,600,400);
+  ctx.fillStyle = '#0f0';
+  ctx.fillRect(playerX, playerY, 40, 20);
+  ctx.fillStyle = '#f00';
+  bullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 10));
+  ctx.fillStyle = '#0ff';
+  aliens.forEach(a => {
+    if (a.alive) ctx.fillRect(a.x, a.y, 30, 20);
+  });
+  ctx.fillStyle = '#fff';
+  ctx.font = '16px monospace';
+  ctx.fillText('Score: ' + score, 10, 20);
+  requestAnimationFrame(loop);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') playerX = Math.max(0, playerX - 10);
+  if (e.key === 'ArrowRight') playerX = Math.min(560, playerX + 10);
+  if (e.key === ' ') bullets.push({x: playerX + 18, y: playerY});
+});
+
+loop();
+</script>
+</body>
+</html>
